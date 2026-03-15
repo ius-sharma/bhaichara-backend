@@ -21,10 +21,8 @@ app.use(
     credentials: true,
   }),
 );
-
-<<<<<<< HEAD
 app.options("*", cors());
-=======
+
 if (process.env.FRONTEND_URL) {
   allowedOrigins.add(process.env.FRONTEND_URL.trim());
 }
@@ -56,11 +54,11 @@ app.use(
     origin: [
       "http://localhost:5173",
       "https://ius-sharma.github.io",
-      "https://ius-sharma.github.io/bhaichara-client"
+      "https://ius-sharma.github.io/bhaichara-client",
     ],
     methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true
-  })
+    credentials: true,
+  }),
 );
 
 app.options("*", cors());
@@ -110,4 +108,3 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`Bhaichara backend server running on port ${PORT}`);
 });
->>>>>>> 38cc3051996938cf439f9af12c1d8b7263ac4454
