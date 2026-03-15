@@ -4,6 +4,7 @@ const {
   registerUser,
   loginUser,
   getAllUsers,
+  searchUsers,
   updateUserProfile,
   uploadUserAvatar,
   updateUserAvatarUrl,
@@ -14,7 +15,10 @@ const authMiddleware = require("../middleware/authMiddleware");
 const router = express.Router();
 
 // GET /api/users — list users
-router.get("/", getAllUsers);
+router.get("/", authMiddleware, getAllUsers);
+
+// GET /api/users/search?q=term — search users by name
+router.get("/search", authMiddleware, searchUsers);
 
 // POST /api/users — create a new user
 router.post("/", createUser);

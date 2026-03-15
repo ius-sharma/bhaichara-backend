@@ -1,6 +1,43 @@
 const User = require("../models/User");
+const Friend = require("../models/Friend");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+
+const buildUserResponse = (user) => ({
+  id: user._id,
+  name: user.name,
+  email: user.email,
+  bio: user.bio,
+  interests: user.interests,
+  role: user.role,
+  aiName: user.aiName,
+  avatarUrl: user.avatarUrl,
+  createdAt: user.createdAt,
+});
+
+const getAcceptedFriendIds = async (userId) => {
+  const acceptedConnections = await Friend.find({
+    status: "accepted",
+    $or: [{ sender: userId }, { receiver: userId }],
+  }).select("sender receiver");
+
+  const friendIds = new Set();
+
+  acceptedConnections.forEach((connection) => {
+    const senderId = String(connection.sender);
+    const receiverId = String(connection.receiver);
+
+    if (senderId !== String(userId)) {
+      friendIds.add(senderId);
+    }
+
+    if (receiverId !== String(userId)) {
+      friendIds.add(receiverId);
+    }
+  });
+
+  return Array.from(friendIds);
+};
 
 const createUser = async (req, res) => {
   const { name, email, password } = req.body;
@@ -178,13 +215,59 @@ const updateUserProfile = async (req, res) => {
 };
 
 const getAllUsers = async (req, res) => {
-  const excludedUserId = req.query.exclude;
+  const currentUserId = req.user?.id;
+  const currentUserRole = req.user?.role;
+
+  if (!currentUserId) {
+    return res.status(401).json({ message: "Unauthorised." });
+  }
+
+  if (currentUserRole !== "admin") {
+    return res.status(403).json({
+      message: "Only admin can view all users without searching.",
+    });
+  }
 
   try {
-    const filter = excludedUserId ? { _id: { $ne: excludedUserId } } : {};
-    const users = await User.find(filter)
+    const users = await User.find({ _id: { $ne: currentUserId } })
       .select("_id name email bio avatarUrl createdAt")
       .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      message: "Users fetched successfully.",
+      data: users,
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "Server error.", error: error.message });
+  }
+};
+
+const searchUsers = async (req, res) => {
+  const currentUserId = req.user?.id;
+  const query = String(req.query.q || "").trim();
+
+  if (!currentUserId) {
+    return res.status(401).json({ message: "Unauthorised." });
+  }
+
+  if (query.length < 2) {
+    return res.status(400).json({
+      message: "Search query must be at least 2 characters.",
+    });
+  }
+
+  try {
+    const friendIds = await getAcceptedFriendIds(currentUserId);
+
+    const users = await User.find({
+      _id: { $nin: [currentUserId, ...friendIds] },
+      name: { $regex: query, $options: "i" },
+    })
+      .select("_id name email bio avatarUrl createdAt")
+      .sort({ name: 1 })
+      .limit(25);
 
     return res.status(200).json({
       message: "Users fetched successfully.",
@@ -226,17 +309,7 @@ const uploadUserAvatar = async (req, res) => {
 
     return res.status(200).json({
       message: "Avatar uploaded successfully.",
-      user: {
-        id: updatedUser._id,
-        name: updatedUser.name,
-        email: updatedUser.email,
-        bio: updatedUser.bio,
-        interests: updatedUser.interests,
-        role: updatedUser.role,
-        aiName: updatedUser.aiName,
-        avatarUrl: updatedUser.avatarUrl,
-        createdAt: updatedUser.createdAt,
-      },
+      user: buildUserResponse(updatedUser),
     });
   } catch (error) {
     return res
@@ -270,17 +343,7 @@ const updateUserAvatarUrl = async (req, res) => {
 
     return res.status(200).json({
       message: "Avatar updated successfully.",
-      user: {
-        id: updatedUser._id,
-        name: updatedUser.name,
-        email: updatedUser.email,
-        bio: updatedUser.bio,
-        interests: updatedUser.interests,
-        role: updatedUser.role,
-        aiName: updatedUser.aiName,
-        avatarUrl: updatedUser.avatarUrl,
-        createdAt: updatedUser.createdAt,
-      },
+      user: buildUserResponse(updatedUser),
     });
   } catch (error) {
     return res
@@ -297,4 +360,5 @@ module.exports = {
   updateUserProfile,
   uploadUserAvatar,
   updateUserAvatarUrl,
+  searchUsers,
 };
