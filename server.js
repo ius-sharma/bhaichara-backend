@@ -8,63 +8,53 @@ dotenv.config();
 connectDB();
 
 const app = express();
-const PORT = Number(process.env.PORT) || 5000;
+const PORT = process.env.PORT || 5000;
+
+/*
+============================
+CORS CONFIG
+============================
+*/
+
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://ius-sharma.github.io",
+  "https://ius-sharma.github.io/bhaichara-client",
+];
 
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://ius-sharma.github.io",
-      "https://ius-sharma.github.io/bhaichara-client",
-    ],
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.indexOf(origin) !== -1) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("CORS not allowed"));
+    },
     credentials: true,
-  }),
-);
-app.options("*", cors());
-
-if (process.env.FRONTEND_URL) {
-  allowedOrigins.add(process.env.FRONTEND_URL.trim());
-}
-
-const corsOptions = {
-  origin(origin, callback) {
-    // Allow non-browser requests like Postman or server-to-server calls.
-    if (!origin) {
-      callback(null, true);
-      return;
-    }
-
-    if (allowedOrigins.has(origin)) {
-      callback(null, true);
-      return;
-    }
-
-    callback(new Error(`CORS blocked for origin: ${origin}`));
-  },
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-};
-
-const cors = require("cors");
-
-app.use(
-  cors({
-    origin: [
-      "http://localhost:5173",
-      "https://ius-sharma.github.io",
-      "https://ius-sharma.github.io/bhaichara-client",
-    ],
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
 
 app.options("*", cors());
+
+/*
+============================
+MIDDLEWARE
+============================
+*/
 
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+/*
+============================
+ROUTES
+============================
+*/
 
 const userRoutes = require("./routes/userRoutes");
 const friendRoutes = require("./routes/friendRoutes");
@@ -72,6 +62,7 @@ const messageRoutes = require("./routes/messageRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const aiRoutes = require("./routes/aiRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
+
 app.use("/api/users", userRoutes);
 app.use("/api/friends", friendRoutes);
 app.use("/api/messages", messageRoutes);
@@ -79,31 +70,40 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/upload", uploadRoutes);
 
+/*
+============================
+TEST ROUTE
+============================
+*/
+
 app.get("/", (req, res) => {
-  res.send("Bhaichara backend is running");
+  res.send("Bhaichara backend is running 🚀");
 });
 
+/*
+============================
+ERROR HANDLER
+============================
+*/
+
 app.use((err, req, res, next) => {
-  if (res.headersSent) {
-    next(err);
-    return;
-  }
+  if (res.headersSent) return next(err);
 
-  const status = Number(err?.status || err?.statusCode) || 500;
-  const message = err?.message || "Internal server error.";
+  const status = err.status || 500;
 
-  console.error("[express-error]", {
-    method: req.method,
-    path: req.originalUrl,
-    status,
-    message,
-  });
+  console.error("Server Error:", err.message);
 
   res.status(status).json({
     status,
-    message,
+    message: err.message || "Internal Server Error",
   });
 });
+
+/*
+============================
+SERVER START
+============================
+*/
 
 app.listen(PORT, () => {
   console.log(`Bhaichara backend server running on port ${PORT}`);
