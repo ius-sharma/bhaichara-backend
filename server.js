@@ -14,7 +14,6 @@ const allowedOrigins = new Set([
   "http://localhost:3000",
   "http://localhost:4173",
   "http://localhost:5173",
-  "https://ius-sharma.github.io",
 ]);
 
 if (process.env.FRONTEND_URL) {
