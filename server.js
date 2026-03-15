@@ -25,9 +25,10 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
+      // allow server to server requests
       if (!origin) return callback(null, true);
 
-      if (allowedOrigins.indexOf(origin) !== -1) {
+      if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
 
@@ -38,8 +39,6 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
-
-app.options("*", cors());
 
 /*
 ============================
@@ -72,7 +71,7 @@ app.use("/api/upload", uploadRoutes);
 
 /*
 ============================
-TEST ROUTE
+HEALTH CHECK
 ============================
 */
 
@@ -87,7 +86,9 @@ ERROR HANDLER
 */
 
 app.use((err, req, res, next) => {
-  if (res.headersSent) return next(err);
+  if (res.headersSent) {
+    return next(err);
+  }
 
   const status = err.status || 500;
 
