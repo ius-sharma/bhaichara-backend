@@ -40,7 +40,22 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization"],
 };
 
-app.use(cors(corsOptions));
+const cors = require("cors");
+
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://ius-sharma.github.io",
+      "https://ius-sharma.github.io/bhaichara-client"
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true
+  })
+);
+
+app.options("*", cors());
+
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
