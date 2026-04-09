@@ -20,6 +20,7 @@ const allowedOrigins = [
   "http://localhost:5173",
   "https://ius-sharma.github.io",
   "https://ius-sharma.github.io/bhaichara-client",
+  "https://bhaichara-client.vercel.app",
 ];
 
 app.use(
