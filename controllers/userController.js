@@ -92,8 +92,7 @@ const registerUser = async (req, res) => {
         .json({ message: "A user with this email already exists." });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    await User.create({ name, email, password: hashedPassword });
+    await User.create({ name, email, password });
 
     return res.status(201).json({ message: "User registered successfully." });
   } catch (error) {
@@ -116,6 +115,12 @@ const loginUser = async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({ message: "Invalid email or password." });
+    }
+
+    if (user.isBlacklisted) {
+      return res.status(403).json({
+        message: "Your account is blacklisted. Contact admin support.",
+      });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);

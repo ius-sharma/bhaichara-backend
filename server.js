@@ -47,6 +47,7 @@ MIDDLEWARE
 */
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 /*
@@ -56,6 +57,7 @@ ROUTES
 */
 
 const userRoutes = require("./routes/userRoutes");
+const authRoutes = require("./routes/authRoutes");
 const friendRoutes = require("./routes/friendRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 const adminRoutes = require("./routes/adminRoutes");
@@ -63,6 +65,8 @@ const aiRoutes = require("./routes/aiRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
 
 app.use("/api/users", userRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/", authRoutes);
 app.use("/api/friends", friendRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/admin", adminRoutes);

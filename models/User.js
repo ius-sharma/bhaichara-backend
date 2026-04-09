@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 
 const userSchema = new mongoose.Schema(
   {
@@ -42,10 +43,36 @@ const userSchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
+    isBlacklisted: {
+      type: Boolean,
+      default: false,
+    },
+    blacklistReason: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    blacklistedAt: {
+      type: Date,
+      default: null,
+    },
+    blacklistedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
   },
   {
-    timestamps: { createdAt: true, updatedAt: false },
+    timestamps: true,
   },
 );
+
+userSchema.pre("save", async function preSave() {
+  if (!this.isModified("password")) {
+    return;
+  }
+
+  this.password = await bcrypt.hash(this.password, 10);
+});
 
 module.exports = mongoose.model("User", userSchema);

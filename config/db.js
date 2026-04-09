@@ -1,9 +1,11 @@
 const mongoose = require("mongoose");
+const ensureDefaultAdmin = require("../utils/ensureDefaultAdmin");
 
 const connectDB = async () => {
   try {
     const connection = await mongoose.connect(process.env.MONGO_URI);
     console.log(`MongoDB connected: ${connection.connection.host}`);
+    await ensureDefaultAdmin();
   } catch (error) {
     console.error(`MongoDB connection error: ${error.message}`);
     process.exit(1);
